@@ -1,4 +1,4 @@
-export function loadImage(urls: string[]): Promise<HTMLImageElement[]> {
+export function loadImages(urls: string[]): Promise<HTMLImageElement[]> {
   return Promise.all(
     urls.map(async (url: string): Promise<HTMLImageElement> => {
       const image = new Image();

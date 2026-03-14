@@ -1,4 +1,4 @@
-export function loadImage(urls) {
+export function loadImages(urls) {
   return Promise.all(
     urls.map(async (url) => {
       const image = new Image();
