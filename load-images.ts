@@ -1,10 +1,18 @@
-export function loadImages(urls: string[]): Promise<HTMLImageElement[]> {
+export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageElement[]> {
   return Promise.all(
-    urls.map(async (url: string): Promise<HTMLImageElement> => {
+    urls.map((url) => {
       const image = new Image();
       image.src = url;
-      await image.decode();
-      return image;
+      let timer = 0;
+      return Promise.race([
+        image.decode(),
+        new Promise((_, reject) => {
+          timer = Number(setTimeout(reject, timeout));
+        }),
+      ])
+        .then(() => image)
+        .catch(() => null)
+        .finally(() => clearTimeout(timer));
     }),
-  );
+  ).then((images) => images.filter((image): image is HTMLImageElement => image !== null));
 }
