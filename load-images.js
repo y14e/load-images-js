@@ -14,5 +14,5 @@ export function loadImages(urls, timeout = 3000) {
         .catch(() => null)
         .finally(() => clearTimeout(timer));
     }),
-  ).then((images) => images.filter(Boolean));
+  ).then((images) => images.filter((image) => image !== null));
 }

@@ -14,5 +14,5 @@ export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageEle
         .catch(() => null)
         .finally(() => clearTimeout(timer));
     }),
-  ).then((images) => images.filter(Boolean) as HTMLImageElement[]);
+  ).then((images) => images.filter((image): image is HTMLImageElement => image !== null));
 }
