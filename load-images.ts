@@ -14,5 +14,13 @@ export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageEle
         .catch(() => null)
         .finally(() => clearTimeout(timer));
     }),
-  ).then((images) => images.filter((image): image is HTMLImageElement => image !== null));
+  ).then((images) => {
+    const array = new Array(images.length);
+    images.forEach((image, index) => {
+      if (image !== null) {
+        array[index] = image;
+      }
+    });
+    return array;
+  });
 }

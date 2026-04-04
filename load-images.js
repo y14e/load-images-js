@@ -14,5 +14,13 @@ export function loadImages(urls, timeout = 3000) {
         .catch(() => null)
         .finally(() => clearTimeout(timer));
     }),
-  ).then((images) => images.filter((image) => image !== null));
+  ).then((images) => {
+    const array = new Array(images.length);
+    images.forEach((image, index) => {
+      if (image !== null) {
+        array[index] = image;
+      }
+    });
+    return array;
+  });
 }
