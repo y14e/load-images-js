@@ -2,33 +2,38 @@ export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageEle
   return Promise.all(
     urls.map(async (url) => {
       const image = new Image();
-      image.src = url;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      const decodePromise = (async () => {
-        if (image.complete) {
-          return image;
-        }
-        try {
-          await image.decode();
-          return image;
-        } catch {}
-        await new Promise<void>((resolve, reject) => {
-          image.onload = () => resolve();
-          image.onerror = () => reject();
-        });
-        return image;
-      })();
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timer = setTimeout(reject, timeout);
-      });
+      const controller = new AbortController();
       try {
-        return await Promise.race([decodePromise, timeoutPromise]);
-      } catch {
+        image.src = url;
+        if (image.complete && image.naturalWidth > 0) return image;
+        const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+          const { signal } = controller;
+          image.addEventListener(
+            'load',
+            async () => {
+              try {
+                await image.decode();
+              } catch {}
+              resolve(image);
+            },
+            { once: true, signal },
+          );
+          image.addEventListener('error', () => reject(new Error(`Image load failed: ${url}`)), { once: true, signal });
+        });
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error(`Image load timeout (${timeout}ms): ${url}`)), timeout);
+        });
+        return await Promise.race([loadPromise, timeoutPromise]);
+      } catch (error) {
+        console.warn('Image load failed:', url, error);
         return null;
       } finally {
         if (timer !== undefined) {
           clearTimeout(timer);
         }
+        controller.abort();
+        image.src = '';
       }
     }),
   ).then((images) => images.filter((image): image is HTMLImageElement => image !== null));
