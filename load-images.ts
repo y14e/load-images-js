@@ -16,9 +16,9 @@ export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageEle
     }),
   ).then((images) => {
     const array = new Array(images.length);
-    images.forEach((image, index) => {
+    images.forEach((image, i) => {
       if (image !== null) {
-        array[index] = image;
+        array[i] = image;
       }
     });
     return array;
