@@ -2,11 +2,15 @@ export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageEle
   return Promise.all(
     urls.map(async (url) => {
       const image = new Image();
+      let resolved = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
       const controller = new AbortController();
       try {
         image.src = url;
-        if (image.complete && image.naturalWidth > 0) return image;
+        if (image.complete && image.naturalWidth > 0) {
+          resolved = true;
+          return image;
+        }
         const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
           const { signal } = controller;
           image.addEventListener(
@@ -33,7 +37,9 @@ export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageEle
           clearTimeout(timer);
         }
         controller.abort();
-        image.src = '';
+        if (!resolved) {
+          image.src = '';
+        }
       }
     }),
   ).then((images) => images.filter((image): image is HTMLImageElement => image !== null));
