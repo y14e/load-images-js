@@ -1,26 +1,35 @@
 export function loadImages(urls, timeout = 3000) {
   return Promise.all(
-    urls.map((url) => {
+    urls.map(async (url) => {
       const image = new Image();
       image.src = url;
-      let timer = 0;
-      return Promise.race([
-        image.decode(),
-        new Promise((_, reject) => {
-          timer = Number(setTimeout(reject, timeout));
-        }),
-      ])
-        .then(() => image)
-        .catch(() => null)
-        .finally(() => clearTimeout(timer));
-    }),
-  ).then((images) => {
-    const result = new Array(images.length);
-    images.forEach((image, i) => {
-      if (image !== null) {
-        result[i] = image;
+      let timer;
+      const decodePromise = (async () => {
+        if (image.complete) {
+          return image;
+        }
+        try {
+          await image.decode();
+          return image;
+        } catch {}
+        await new Promise((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject();
+        });
+        return image;
+      })();
+      const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(reject, timeout);
+      });
+      try {
+        return await Promise.race([decodePromise, timeoutPromise]);
+      } catch {
+        return null;
+      } finally {
+        if (timer !== undefined) {
+          clearTimeout(timer);
+        }
       }
-    });
-    return result;
-  });
+    }),
+  ).then((images) => images.filter((image) => image !== null));
 }
