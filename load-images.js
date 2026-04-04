@@ -15,12 +15,12 @@ export function loadImages(urls, timeout = 3000) {
         .finally(() => clearTimeout(timer));
     }),
   ).then((images) => {
-    const array = new Array(images.length);
+    const result = new Array(images.length);
     images.forEach((image, i) => {
       if (image !== null) {
-        array[i] = image;
+        result[i] = image;
       }
     });
-    return array;
+    return result;
   });
 }
