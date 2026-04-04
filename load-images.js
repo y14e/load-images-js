@@ -11,24 +11,26 @@ export function loadImages(urls, timeout = 3000) {
           resolved = true;
           return image;
         }
-        const loadPromise = new Promise((resolve, reject) => {
-          const { signal } = controller;
-          image.addEventListener(
-            'load',
-            async () => {
-              try {
-                await image.decode();
-              } catch {}
-              resolve(image);
-            },
-            { once: true, signal },
-          );
-          image.addEventListener('error', () => reject(new Error(`Image load failed: ${url}`)), { once: true, signal });
-        });
-        const timeoutPromise = new Promise((_, reject) => {
-          timer = setTimeout(() => reject(new Error(`Image load timeout (${timeout}ms): ${url}`)), timeout);
-        });
-        return await Promise.race([loadPromise, timeoutPromise]);
+        return await Promise.race([
+          new Promise((resolve, reject) => {
+            const { signal } = controller;
+            image.addEventListener(
+              'load',
+              async () => {
+                try {
+                  await image.decode();
+                } catch {}
+                resolved = true;
+                resolve(image);
+              },
+              { once: true, signal },
+            );
+            image.addEventListener('error', () => reject(new Error(`Image load failed: ${url}`)), { once: true, signal });
+          }),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`Image load timeout (${timeout}ms): ${url}`)), timeout);
+          }),
+        ]);
       } catch (error) {
         console.warn('Image load failed:', url, error);
         return null;
