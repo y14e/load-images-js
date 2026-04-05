@@ -52,6 +52,7 @@ export function loadImages(urls: string[], options: LoadImagesOptions = {}): Pro
       } finally {
         if (timer !== undefined) {
           clearTimeout(timer);
+          timer = undefined;
         }
         if (externalSignal && externalAbortHandler) {
           externalSignal.removeEventListener('abort', externalAbortHandler);
