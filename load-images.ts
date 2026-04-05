@@ -1,10 +1,25 @@
-export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageElement[]> {
+interface LoadImagesOptions {
+  signal?: AbortSignal;
+  timeout?: number;
+}
+
+export function loadImages(urls: string[], options: LoadImagesOptions = {}): Promise<HTMLImageElement[]> {
+  const { signal: externalSignal, timeout = 3000 } = options;
   return Promise.all(
     urls.map(async (url) => {
       const image = new Image();
       let resolved = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
       const controller = new AbortController();
+      let externalAbortHandler: (() => void) | undefined;
+      if (externalSignal) {
+        if (externalSignal.aborted) {
+          controller.abort();
+        } else {
+          externalAbortHandler = () => controller.abort();
+          externalSignal.addEventListener('abort', externalAbortHandler, { once: true });
+        }
+      }
       try {
         image.src = url;
         if (image.complete && image.naturalWidth > 0) {
@@ -37,6 +52,9 @@ export function loadImages(urls: string[], timeout = 3000): Promise<HTMLImageEle
       } finally {
         if (timer !== undefined) {
           clearTimeout(timer);
+        }
+        if (externalSignal && externalAbortHandler) {
+          externalSignal.removeEventListener('abort', externalAbortHandler);
         }
         controller.abort();
         if (!resolved) {

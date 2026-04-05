@@ -1,10 +1,20 @@
-export function loadImages(urls, timeout = 3000) {
+export function loadImages(urls, options = {}) {
+  const { signal: externalSignal, timeout = 3000 } = options;
   return Promise.all(
     urls.map(async (url) => {
       const image = new Image();
       let resolved = false;
       let timer;
       const controller = new AbortController();
+      let externalAbortHandler;
+      if (externalSignal) {
+        if (externalSignal.aborted) {
+          controller.abort();
+        } else {
+          externalAbortHandler = () => controller.abort();
+          externalSignal.addEventListener('abort', externalAbortHandler, { once: true });
+        }
+      }
       try {
         image.src = url;
         if (image.complete && image.naturalWidth > 0) {
@@ -37,6 +47,9 @@ export function loadImages(urls, timeout = 3000) {
       } finally {
         if (timer !== undefined) {
           clearTimeout(timer);
+        }
+        if (externalSignal && externalAbortHandler) {
+          externalSignal.removeEventListener('abort', externalAbortHandler);
         }
         controller.abort();
         if (!resolved) {
